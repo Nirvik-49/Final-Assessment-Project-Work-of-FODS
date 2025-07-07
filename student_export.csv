@@ -1,0 +1,6 @@
+user_id,username,role,Math,Science,English,History,Art,eca_activities
+2,student1,student,95,85,82,88,70,"Debate Club (Advanced), Chess Club (Beginner)"
+3,student2,student,90,82,95,85,68,"Music Club (Intermediate), Drama Club (Advanced), Robotics Club (Advanced)"
+4,new_student,student,,,,,,
+5,student3,student,0,0,0,0,0,
+6,newstudent,student,0,0,0,0,0,

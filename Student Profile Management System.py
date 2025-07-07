@@ -1,0 +1,706 @@
+import json  # Used for reading and writing data in JSON format (e.g., users, grades, ECA)
+import os    # Used for interacting with the operating system, like checking if files exist
+import pandas as pd  # Powerful library for data manipulation and analysis, especially with DataFrames
+import matplotlib.pyplot as plt  # Used for creating static, interactive, and animated visualizations (like charts)
+import csv   # Used for reading and writing CSV (Comma Separated Values) files
+import re    # Regular expression module, used here for password validation rules
+from collections import defaultdict  # A dictionary subclass that calls a factory function to supply missing values
+
+# Base class for all users in the system (Admin and Student)
+class User:
+    def __init__(self, username, password, role, user_id):
+        self.username = username  # Stores the user's unique login name
+        self.password = password  # Stores the user's password
+        self.role = role          # Defines the user's role: 'admin' or 'student'
+        self.user_id = user_id    # A unique numerical identifier for the user
+
+# Student class, inherits from User, adding student-specific attributes
+class Student(User):
+    def __init__(self, username, password, user_id):
+        # Call the constructor of the parent User class, setting role to 'student'
+        super().__init__(username, password, 'student', user_id)
+        self.grades = {}  # Dictionary to store grades for various subjects (e.g., {'Math': 85})
+        self.eca = []     # List to store extracurricular activities (e.g., [{'Activity': 'Debate Club', 'Level': 'Advanced'}])
+
+# Admin class, inherits from User, representing administrative users
+class Admin(User):
+    def __init__(self, username, password, user_id):
+        # Call the constructor of the parent User class, setting role to 'admin'
+        super().__init__(username, password, 'admin', user_id)
+
+# Main class that manages the entire student profile system
+class StudentManagementSystem:
+    def __init__(self):
+        # First, ensure all necessary data files exist, creating them with defaults if not
+        self._initialize_data_files()
+        # Initialize empty lists/dictionaries to hold data in memory
+        self.users = []
+        self.grades = defaultdict(dict)  # Stores grades, defaulting to an empty dict for new student IDs
+        self.eca = defaultdict(list)     # Stores ECAs, defaulting to an empty list for new student IDs
+        self.passwords = {}              # Stores username-password pairs for quick lookup during login
+        # Load all data from the files into memory
+        self._load_all_data()
+        self.current_user = None         # Stores the currently logged-in user object
+
+    # Method to search student by username or ID
+
+    # Import all necessary libraries for our student management system
+import json   # For working with JSON data files
+import os     # For file system operations
+import pandas as pd  # For data analysis and manipulation
+import matplotlib.pyplot as plt  # For creating visualizations
+import csv    # For CSV file operations
+import re     # For regular expression pattern matching
+from collections import defaultdict  # For dictionary with default values
+
+# Define our user classes to represent different types of users in the system
+class User:
+    # Base class that both Admin and Student will inherit from
+    def __init__(self, username, password, role, user_id):
+        # Common attributes for all users
+        self.username = username  # Unique login name
+        self.password = password  # Login password (stored securely)
+        self.role = role          # Either 'admin' or 'student'
+        self.user_id = user_id    # Unique numerical identifier
+
+class Student(User):
+    # Specialized user class with student-specific attributes
+    def __init__(self, username, password, user_id):
+        # Initialize parent class attributes
+        super().__init__(username, password, 'student', user_id)
+        # Student-specific attributes
+        self.grades = {}    # Stores subject:grade pairs
+        self.eca = []       # Tracks extracurricular activities
+
+class Admin(User):
+    # Specialized user class for administrators
+    def __init__(self, username, password, user_id):
+        # Initialize with admin role
+        super().__init__(username, password, 'admin', user_id)
+
+class StudentManagementSystem:
+    # Main class that handles all system operations
+    
+    def __init__(self):
+        # Initialize the system by setting up all required data
+        self._initialize_data_files()  # Creates necessary files if missing
+        # Initialize empty data structures to hold our information
+        self.users = []                # List of all user dictionaries
+        self.grades = defaultdict(dict)  # Grades organized by student ID
+        self.eca = defaultdict(list)    # Activities organized by student ID
+        self.passwords = {}            # Quick password lookup dictionary
+        self._load_all_data()          # Load existing data from files
+        self.current_user = None       # Track who's currently logged in
+
+    def search_student(self):
+        """
+        Allows admins to search for students by either username or ID
+        Displays complete student profile including grades and activities
+        """
+        # Show search header
+        print("\n=== Search Student ===")
+        
+        # Get search term from user, stripping whitespace
+        search_term = input("Enter student username or ID to search: ").strip()
+        
+        # Search through all users for matches (case-insensitive for usernames)
+        found_students = [
+            u for u in self.users 
+            if str(u['user_id']) == search_term or u['username'].lower() == search_term.lower()
+        ]
+        
+        # Show results if any matches found
+        if found_students:
+            print("\n=== Search Results ===")
+            for student in found_students:
+                # Print basic info
+                print(f"ID: {student['user_id']}, Username: {student['username']}")
+                print(f"Role: {student['role']}")
+                
+                # Display grades if available
+                grades = self.grades.get(str(student['user_id']), {})
+                if grades:
+                    print("\nGrades:")
+                    for subject, grade in grades.items():
+                        print(f"  {subject}: {grade}")
+                
+                # Display activities if available
+                ecas = self.eca.get(str(student['user_id']), [])
+                if ecas:
+                    print("\nExtracurricular Activities:")
+                    for eca in ecas:
+                        print(f"  - {eca['Activity']} ({eca['Level']})")
+                
+                # Visual separator between students
+                print("-" * 30)  
+        else:
+            # Message when no matches found
+            print("No matching students found.")
+
+    # Private method to create data files with default content if they don't exist
+    def _initialize_data_files(self):
+        # Define default data for each file
+        default_files = {
+            'users.txt': [
+                {'username': 'admin', 'password': 'admin123', 'role': 'admin', 'user_id': 1},
+                {'username': 'student1', 'password': 'password1', 'role': 'student', 'user_id': 2},
+                {'username': 'student2', 'password': 'password2', 'role': 'student', 'user_id': 3}
+            ],
+            'grades.txt': {
+                "2": {"Mathematics": 85, "Science": 78, "English": 92, "History": 88, "Art": 70},
+                "3": {"Mathematics": 90, "Science": 82, "English": 95, "History": 85, "Art": 68}
+            },
+            'eca.txt': {
+                "2": [{"Activity": "Debate Club", "Level": "Advanced"}, 
+                      {"Activity": "Chess Club", "Level": "Beginner"}],
+                "3": [{"Activity": "Music Club", "Level": "Intermediate"}, 
+                      {"Activity": "Drama Club", "Level": "Advanced"}]
+            },
+            'passwords.txt': [
+                "admin:admin123",
+                "student1:password1",
+                "student2:password2"
+            ]
+        }
+
+        # Iterate through each file and its default data
+        for filename, default_data in default_files.items():
+            # Check if the file already exists
+            if not os.path.exists(filename):
+                # Open the file in write mode
+                with open(filename, 'w') as f:
+                    # Special handling for passwords.txt and other .txt files
+                    if filename.endswith('.txt'):
+                        # If default data is a list (like for passwords.txt)
+                        if isinstance(default_data, list):
+                            # Write each item in the list as a new line
+                            for line in default_data:
+                                # For passwords.txt, write the string directly
+                                if filename == 'passwords.txt':
+                                    f.write(f"{line}\n")
+                                # For users.txt (which is a list of dicts), dump as JSON
+                                else:
+                                    json.dump(default_data, f)
+                        # If default data is a dictionary (like for grades.txt, eca.txt)
+                        else:
+                            # Dump the dictionary as JSON into the file
+                            json.dump(default_data, f)
+                    # This 'else' block is for non-.txt files, though not used in this specific setup
+                    else:
+                        json.dump(default_data, f)
+
+    # Private method to load all data from respective files into memory
+    def _load_all_data(self):
+        try:
+            # Load users data from users.txt
+            with open('users.txt', 'r') as f:
+                content = f.read().strip()  # Read content and remove leading/trailing whitespace
+                if content:  # Check if the file actually contains data
+                    self.users = json.loads(content)  # Parse JSON content into self.users
+                else:
+                    print("Warning: users.txt is empty. Loading default data.")
+                    self.users = []  # If empty, initialize as an empty list
+
+            # Load grades data from grades.txt
+            with open('grades.txt', 'r') as f:
+                content = f.read().strip()
+                if content:
+                    # Parse JSON and convert to defaultdict for easier access
+                    self.grades = defaultdict(dict, json.loads(content))
+                else:
+                    print("Warning: grades.txt is empty. Loading default data.")
+                    self.grades = defaultdict(dict)
+
+            # Load ECA data from eca.txt
+            with open('eca.txt', 'r') as f:
+                content = f.read().strip()
+                if content:
+                    # Parse JSON and convert to defaultdict for easier access
+                    self.eca = defaultdict(list, json.loads(content))
+                else:
+                    print("Warning: eca.txt is empty. Loading default data.")
+                    self.eca = defaultdict(list)
+
+            # Load passwords data from passwords.txt
+            with open('passwords.txt', 'r') as f:
+                self.passwords = {}  # Initialize an empty dictionary for passwords
+                for line in f:  # Read file line by line
+                    if line.strip():  # If the line is not empty after stripping whitespace
+                        user, pwd = line.strip().split(':')  # Split username and password by ':'
+                        self.passwords[user] = pwd  # Store in the passwords dictionary
+        except Exception as e:
+            # Catch any exception during file loading and print an error message
+            print(f"Error loading data: {str(e)}")
+            raise  # Re-raise the exception to stop execution if loading fails critically
+
+    # Private method to save all current in-memory data back to their respective files
+    def _save_all_data(self):
+        try:
+            # Save users data to users.txt
+            with open('users.txt', 'w') as f:
+                json.dump(self.users, f)  # Dump the users list as JSON
+
+            # Save grades data to grades.txt
+            with open('grades.txt', 'w') as f:
+                # Convert defaultdict back to a regular dict before dumping
+                json.dump(dict(self.grades), f)
+
+            # Save ECA data to eca.txt
+            with open('eca.txt', 'w') as f:
+                # Convert defaultdict back to a regular dict before dumping
+                json.dump(dict(self.eca), f)
+
+            # Save passwords data to passwords.txt
+            with open('passwords.txt', 'w') as f:
+                for user, pwd in self.passwords.items():  # Iterate through username-password pairs
+                    f.write(f"{user}:{pwd}\n")  # Write each pair as a line
+        except Exception as e:
+            # Catch any exception during file saving and print an error message
+            print(f"Error saving data: {str(e)}")
+            raise  # Re-raise the exception
+
+    # Method to handle user login
+    def login(self):
+        while True:  # Loop indefinitely until successful login or explicit return
+            print("\n=== Login ===")
+            username = input("Username: ").strip()  # Get username input and remove whitespace
+            password = input("Password: ").strip()  # Get password input and remove whitespace
+            
+            try:
+                # Check if username exists and password matches
+                if username in self.passwords and self.passwords[username] == password:
+                    # Find the user's full data (including role and user_id)
+                    user_data = next(u for u in self.users if u['username'] == username)
+                    # If the user is an admin
+                    if user_data['role'] == 'admin':
+                        # Create an Admin object and set it as the current user
+                        self.current_user = Admin(username, password, user_data['user_id'])
+                        self.admin_menu()  # Show the admin menu
+                        return  # Exit the login function
+                    # If the user is a student
+                    else:
+                        # Create a Student object and set it as the current user
+                        self.current_user = Student(username, password, user_data['user_id'])
+                        # Load student's specific grades and ECA data into their object
+                        self.current_user.grades = self.grades.get(str(user_data['user_id']), {})
+                        self.current_user.eca = self.eca.get(str(user_data['user_id']), [])
+                        self.student_menu()  # Show the student menu
+                        return  # Exit the login function
+                print("Invalid credentials. Try again.")  # Message for incorrect username/password
+            except StopIteration:
+                # This exception occurs if 'next' cannot find a matching user_data
+                print("User not found in database")
+            except Exception as e:
+                # Catch any other unexpected errors during login
+                print(f"Login error: {str(e)}")
+
+    # Method to validate password complexity
+    def validate_password(self, password):
+        # Check if password length is at least 8 characters
+        # Check if password contains at least one letter (A-Z or a-z)
+        # Check if password contains at least one digit (0-9)
+        return len(password) >= 8 and re.search(r"[A-Za-z]", password) and re.search(r"[0-9]", password)
+
+    # Displays the admin menu and handles admin actions
+    def admin_menu(self):
+        while True:  # Loop until admin chooses to logout
+            print("\n=== Admin Menu ===")
+            print("1. Add New Student")
+            print("2. View All Students")
+            print("3. Update Student Records")
+            print("4. View Grade Analytics")
+            print("5. View ECA Analytics")
+            print("6. Export Data to CSV")
+            print("7. Search Student")
+            print("8. Logout")
+            
+            choice = input("Enter your choice (1-8): ").strip()  # Get admin's choice
+            
+            try:
+                # Perform action based on admin's choice
+                if choice == '1':
+                    self.add_student()
+                elif choice == '2':
+                    self.view_all_students()
+                elif choice == '3':
+                    self.update_student_records()
+                elif choice == '4':
+                    self.grade_analytics()
+                elif choice == '5':
+                    self.eca_analytics()
+                elif choice == '6':
+                    self.export_to_csv()
+                elif choice == '7':
+                    self.search_student()
+                elif choice == '8':
+                    return  # Exit admin menu (logout)
+                else:
+                    print("Invalid choice. Please try again.")
+            except Exception as e:
+                # Catch any errors that occur within admin menu functions
+                print(f"Error in admin menu: {str(e)}")
+
+    # Displays the student menu and handles student actions
+    def student_menu(self):
+        while True:  # Loop until student chooses to logout
+            # Display student's username in the menu title
+            print(f"\n=== Student Menu ({self.current_user.username}) ===")
+            print("1. View My Profile")
+            print("2. View My Grades")
+            print("3. View My ECAs")
+            print("4. Update My Information")
+            print("5. Logout")
+            
+            choice = input("Enter your choice (1-5): ").strip()  # Get student's choice
+            
+            # Perform action based on student's choice
+            if choice == '1':
+                self.view_student_profile()
+            elif choice == '2':
+                self.view_student_grades()
+            elif choice == '3':
+                self.view_student_ecas()
+            elif choice == '4':
+                self.update_student_info()
+            elif choice == '5':
+                return  # Exit student menu (logout)
+            else:
+                print("Invalid choice. Please try again.")
+
+    def view_student_profile(self):
+        """Display the current student's profile information"""
+        print(f"\n=== Profile of {self.current_user.username} ===")
+        # Find the student's data in our user list
+        student_data = next(u for u in self.users if u['user_id'] == self.current_user.user_id)
+        if student_data:
+            print(f"Username: {student_data['username']}")
+            print(f"User  ID: {student_data['user_id']}")
+            # Check and display any performance alerts
+            self.check_performance_alerts()
+
+    def check_performance_alerts(self):
+        """Check if student's average grade is below passing threshold"""
+        grades = self.grades.get(str(self.current_user.user_id), {})
+        if grades:
+            average_grade = sum(grades.values()) / len(grades)
+            if average_grade < 50:
+                print("Alert: Your average grade is below the passing score! Please seek help.")
+
+    def view_student_grades(self):
+        """Display all grades for the current student"""
+        print(f"\n=== Grades of {self.current_user.username} ===")
+        grades = self.grades.get(str(self.current_user.user_id), {})
+        if grades:
+            for subject, score in grades.items():
+                print(f"{subject}: {score}")
+            # Calculate and display average
+            print(f"\nAverage: {sum(grades.values())/len(grades):.1f}")
+        else:
+            print("No grade data available")
+
+    def view_student_ecas(self):
+        """Display all extracurricular activities for the current student"""
+        print(f"\n=== ECAs of {self.current_user.username} ===")
+        ecas = self.eca.get(str(self.current_user.user_id), [])
+        if ecas:
+            for eca in ecas:
+                print(f"- {eca['Activity']} ({eca['Level']})")
+        else:
+            print("No ECA data available")
+
+    def update_student_info(self):
+        """Allow student to update their personal information (currently just password)"""
+        print("\n=== Update Information ===")
+        print("1. Change Password")
+        choice = input("Enter choice (1): ").strip()
+        
+        if choice == '1':
+            # Get and validate new password
+            new_password = input("Enter new password: ").strip()
+            if not self.validate_password(new_password):
+                return
+            confirm = input("Confirm new password: ").strip()
+            
+            if new_password == confirm:
+                # Update password in all relevant places
+                self.passwords[self.current_user.username] = new_password
+                self.current_user.password = new_password
+                
+                # Update in user list
+                for user in self.users:
+                    if user['user_id'] == self.current_user.user_id:
+                        user['password'] = new_password
+                        break
+                        
+                # Save changes to files
+                self._save_all_data()
+                print("Password changed successfully")
+            else:
+                print("Passwords don't match")
+
+    # Allows admin to add a new student to the system
+    def add_student(self):
+        print("\n=== Add New Student ===")
+        
+        while True:  # Loop until a valid username is entered or cancelled
+            username = input("Enter username (or 'cancel' to abort): ").strip()
+            if username.lower() == 'cancel':
+                return  # Abort adding student
+                
+            if username in self.passwords:
+                print("Username already exists! Please try a different username.")
+                continue  # Ask for username again
+                
+            while True:  # Loop until a valid password is entered
+                password = input("Enter password (8+ chars with letters and numbers): ").strip()
+                if not self.validate_password(password):
+                    print("Password must be at least 8 characters with both letters and numbers.")
+                    continue  # Ask for password again
+                break  # Password is valid, exit inner loop
+                
+            # Generate a new unique user ID (one greater than the max existing ID)
+            user_id = max(int(u['user_id']) for u in self.users) + 1
+            # Create a dictionary for the new student's user data
+            new_student = {
+                'username': username,
+                'password': password,
+                'role': 'student',
+                'user_id': user_id
+            }
+            
+            self.users.append(new_student)  # Add new student to the in-memory users list
+            self.passwords[username] = password  # Add new student's password to the in-memory passwords dict
+            # Initialize empty grades and ECA records for the new student
+            self.grades[str(user_id)] = {
+                'Mathematics': 0, 'Science': 0, 'English': 0, 'History': 0, 'Art': 0
+            }
+            self.eca[str(user_id)] = []
+            
+            self._save_all_data()  # Save all updated data back to files
+            print(f"\nSuccess! Student '{username}' added with ID: {user_id}")
+            break  # Exit the outer loop (student added successfully)
+
+    # Displays a formatted list of all students
+    def view_all_students(self):
+        print("\n=== All Students ===\n")
+        # Print table header
+        print("{:<8} {:<15}".format('ID', 'Username'))
+        print("-"*24) # Separator line
+        
+        # Filter for student users, sort by user_id, and print their details
+        for student in sorted([u for u in self.users if u['role'] == 'student'], 
+                            key=lambda x: x['user_id']):
+            print("{:<8} {:<15}".format(student['user_id'], student['username']))
+            
+        # Display total number of students
+        print(f"\nTotal Students: {len([u for u in self.users if u['role'] == 'student'])}")
+
+    # Allows admin to update a student's grades or extracurricular activities
+    def update_student_records(self):
+        self.view_all_students()  # First, show all students to help admin choose
+        student_id = input("\nEnter student ID to update: ").strip()  # Get student ID from admin
+        
+        # Check if the entered student ID exists in grades data
+        if student_id not in self.grades:
+            print("Error: Student ID not found!")
+            return  # Exit if student not found
+            
+        print("\nUpdate options:")
+        print("1. Update Grades")
+        print("2. Update ECAs")
+        choice = input("Enter your choice (1-2): ").strip()  # Get update type choice
+        
+        if choice == '1':  # Update Grades
+            print("\nCurrent grades:")
+            grades = self.grades[student_id]  # Get current grades for the student
+            for subject, grade in grades.items():
+                print(f"{subject}: {grade}")  # Display current grades
+                
+            print("\nEnter new grades (leave blank to keep existing):")
+            for subject in grades:  # Iterate through each subject
+                while True:  # Loop until valid input or blank
+                    new_grade = input(f"{subject} (0-100): ").strip()
+                    if not new_grade:  # If input is blank, keep existing grade
+                        break
+                    try:
+                        new_grade = int(new_grade)  # Try converting to integer
+                        if 0 <= new_grade <= 100:  # Validate grade range
+                            grades[subject] = new_grade  # Update grade
+                            break  # Valid input, exit inner loop
+                        print("Grade must be between 0 and 100")
+                    except ValueError:
+                        print("Please enter a valid number")
+            
+            self._save_all_data()  # Save changes to files
+            print("\nGrades updated successfully!")
+            
+        elif choice == '2':  # Update ECAs
+            print("\nCurrent ECAs:")
+            ecas = self.eca[student_id]  # Get current ECAs for the student
+            for i, eca_item in enumerate(ecas, 1): # Use eca_item to avoid conflict with self.eca
+                print(f"{i}. {eca_item['Activity']} ({eca_item['Level']})") # Display current ECAs
+                
+            print("\nOptions:")
+            print("1. Add ECA")
+            print("2. Remove ECA")
+            action = input("Choose action (1-2): ").strip()  # Get ECA action choice
+            
+            if action == '1':  # Add ECA
+                activity = input("Activity name: ").strip()
+                level = input("Level (Beginner/Intermediate/Advanced): ").strip().title() # Capitalize first letter
+                
+                # Validate level input
+                if level not in ['Beginner', 'Intermediate', 'Advanced']:
+                    print("Invalid level. Using 'Beginner' as default.")
+                    level = 'Beginner'
+                
+                # Add new ECA to the student's list
+                self.eca[student_id].append({
+                    'Activity': activity,
+                    'Level': level
+                })
+                self._save_all_data()  # Save changes
+                print("\nECA added successfully!")
+                
+            elif action == '2':  # Remove ECA
+                if not ecas:  # Check if there are any ECAs to remove
+                    print("No ECAs to remove!")
+                    return
+                    
+                try:
+                    # Get the index of the ECA to remove (user input is 1-based)
+                    to_remove = int(input("Enter number of ECA to remove: ")) - 1
+                    # Validate the index
+                    if 0 <= to_remove < len(ecas):
+                        removed = self.eca[student_id].pop(to_remove)  # Remove ECA from list
+                        self._save_all_data()  # Save changes
+                        print(f"\nRemoved: {removed['Activity']}")
+                    else:
+                        print("Invalid selection!")
+                except ValueError:
+                    print("Please enter a valid number!")
+
+    # Performs and displays analytics on student grades, including a visualization
+    def grade_analytics(self):
+        if not self.grades:  # Check if any grade data exists
+            print("No grade data available")
+            return
+            
+        # Convert the grades dictionary into a pandas DataFrame for easy analysis
+        # orient='index' means keys of the outer dict become DataFrame index (student IDs)
+        df = pd.DataFrame.from_dict(self.grades, orient='index')
+        
+        print("\n=== Grade Analytics ===")
+        print("\nAverage Grades:")
+        print(df.mean())  # Calculate and print the average grade for each subject
+        
+        # Visualize the average grades using a bar chart
+        df.mean().plot(kind='bar', title='Average Grades by Subject', figsize=(10, 6))
+        plt.ylabel('Score')  # Label for the Y-axis
+        # Add a horizontal line at 50 to represent a passing score
+        plt.axhline(y=50, color='r', linestyle='--', label='Passing Score')
+        plt.legend()  # Display the legend for the passing score line
+        plt.tight_layout()  # Adjust plot to prevent labels from overlapping
+        plt.show()  # Display the plot
+
+    # Performs and displays analytics on student extracurricular activities, including a visualization
+    def eca_analytics(self):
+        if not self.eca:  # Check if any ECA data exists
+            print("No ECA data available")
+            return
+            
+        # Initialize dictionaries to count activity participation and level participation
+        activity_counts = defaultdict(int)
+        level_counts = defaultdict(int)
+        
+        # Iterate through all students' ECA lists
+        for activities in self.eca.values():
+            for activity in activities:  # Iterate through each activity for a student
+                activity_counts[activity['Activity']] += 1  # Increment count for specific activity
+                level_counts[activity['Level']] += 1        # Increment count for specific level
+        
+        print("\n=== ECA Analytics ===")
+        
+        print("\nActivity Participation:")
+        # Sort activities by name and print their participation counts
+        for activity, count in sorted(activity_counts.items()):
+            print(f"{activity}: {count} students")
+            
+        print("\nParticipation by Level:")
+        # Sort levels and print their participation counts
+        for level, count in sorted(level_counts.items()):
+            print(f"{level}: {count} students")
+            
+        # Visualize activity participation using a pie chart
+        pd.Series(activity_counts).plot(
+            kind='pie',
+            title='ECA Participation by Activity',
+            autopct='%1.1f%%',  # Format percentage on slices
+            figsize=(8, 8)
+        )
+        plt.ylabel('')  # Hide the default Y-axis label for pie chart
+        plt.tight_layout()
+        plt.show()  # Display the plot
+
+    # Exports all student data (personal, grades, ECA) to a CSV file
+    def export_to_csv(self):
+        filename = 'student_export.csv'  # Define the output CSV filename
+        
+        # Open the CSV file in write mode, ensuring newlines are handled correctly
+        with open(filename, 'w', newline='') as csvfile:
+            # Define the column headers for the CSV file
+            fieldnames = [
+                'user_id', 'username', 'role',
+                'Math', 'Science', 'English', 'History', 'Art',
+                'eca_activities'
+            ]
+            
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)  # Create a CSV writer
+            writer.writeheader()  # Write the header row to the CSV
+            
+            for user in self.users:  # Iterate through all users
+                if user['role'] == 'admin':  # Skip admin users
+                    continue
+                    
+                user_id = str(user['user_id'])  # Get student's user ID (as string for dict keys)
+                grades = self.grades.get(user_id, {})  # Get student's grades, or empty dict if none
+                ecas = self.eca.get(user_id, [])      # Get student's ECAs, or empty list if none
+                
+                # Write a row for each student
+                writer.writerow({
+                    'user_id': user['user_id'],
+                    'username': user['username'],
+                    'role': user['role'],
+                    'Math': grades.get('Mathematics', ''),  # Get specific subject grade, or blank if not found
+                    'Science': grades.get('Science', ''),
+                    'English': grades.get('English', ''),
+                    'History': grades.get('History', ''),
+                    'Art': grades.get('Art', ''),
+                    'eca_activities': ', '.join(  # Format ECAs into a single string
+                        f"{a['Activity']} ({a['Level']})" for a in ecas
+                    )
+                })
+        
+        print(f"\nStudent data successfully exported to {filename}")  # Confirmation message
+
+    # Main menu loop for the entire system (Login/Exit)
+    def main_menu(self):
+        while True:  # Loop indefinitely until user chooses to exit
+            print("\n=== Student Profile Management System ===")
+            print("1. Login")
+            print("2. Exit")
+            
+            choice = input("Enter your choice (1-2): ").strip()  # Get user's choice
+            
+            if choice == '1':
+                self.login()  # Call the login method
+            elif choice == '2':
+                print("\nThank you for using the system. Goodbye!")
+                break  # Exit the main menu loop
+            else:
+                print("Invalid choice. Please try again.")
+
+# Entry point of the program
+if __name__ == "__main__":
+    system = StudentManagementSystem()  # Create an instance of the StudentManagementSystem
+    system.main_menu()  # Start the main menu of the system

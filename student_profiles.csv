@@ -1,0 +1,28 @@
+UserID,Username,Password,Role
+1,admin,admin123,admin
+2,student1,password1,student
+3,student2,password2,student
+
+UserID,Subject,Mark
+2,Mathematics,85
+2,Science,78
+2,English,92
+2,History,88
+2,Art,70
+3,Mathematics,90
+3,Science,82
+3,English,95
+3,History,85
+3,Art,68
+
+UserID,Activity,Level
+2,Debate Club,Advanced
+2,Chess Club,Beginner
+3,Music Club,Intermediate
+3,Drama Club,Advanced
+
+Username,Password
+admin,admin123
+student1,password1
+student2,password2
+
